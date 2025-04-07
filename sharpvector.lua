@@ -227,7 +227,7 @@ do
 	--[[–––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
 		newindex-metamethod
 	–––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––]]
-	CSharpVector.newindex = function( this, component, value )
+	CSharpVector.__newindex = function( this, component, value )
 
 		VEC_T[this][INDEXING_TRANSLATE_COMPONENT[component]] = value
 
