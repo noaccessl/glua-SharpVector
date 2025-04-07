@@ -3,6 +3,11 @@
 
  Featuring rigid optimization & precise calculations due to components being doubles.
 
+### My initial motive
+> The original idea was to write a GLua variant of Vector because in Lua numbers are stored as _doubles_ (_[Double-precision floating-point format](https://en.wikipedia.org/wiki/Double-precision_floating-point_format)_) while in the engine Vector's components are stored as _floats_ (_32 bits long; higher probability of precision loss on very small scales_).
+>
+> This script can be very handy if you need performant and high-precision vectors.
+
 ## Doc
  All pivotal details are concisely described/explained in the code.
 
