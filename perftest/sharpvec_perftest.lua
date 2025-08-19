@@ -1,818 +1,833 @@
 
-include( 'custom/gluafuncbudget.lua' )
+local frames = 66--[[tickrate]] * 50--[[cycles-samples]]
+local iterations_per_frame = 64
+
 
 --[[–––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
 	Prepare
 –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––]]
-include( 'custom/sharpvector.lua' )
+local function raise_preallocation_1()
 
-local Vector = Vector
-local SharpVector = SharpVector
+	SharpVector_SetPreallocationAmount( ( frames + 1 ) * ( iterations_per_frame + 1 ), nil, nil )
 
-local RaisePreallocation
+end
+
+local function raise_preallocation_3()
+
+	SharpVector_SetPreallocationAmount( nil, nil, ( frames + 1 ) * ( iterations_per_frame + 1 ) )
+
+end
 
 local Tests = {
 
 	Create = {
 
-		{ name = 'new Vector'; func = function()
+		{
 
-			Vector()
+			name = 'new Vector';
+			standard = true;
 
-		end; standard = true };
+			main = function() Vector() end
 
-		{ name = 'new SharpVector'; setup = function()
+		};
 
-			RaisePreallocation( 'sharpvec' )
+		{
 
-		end; func = function()
+			name = 'new SharpVector';
 
-			SharpVector()
+			setup = raise_preallocation_1;
 
-		end }
+			main = function() SharpVector() end;
+
+			after = SharpVector_SetPreallocationAmount
+
+		};
+
+		{
+
+			name = 'new SharpVector; no preallocation';
+
+			setup = function()
+
+				SharpVector_SetPreallocationAmount( 0, nil, nil )
+
+			end;
+
+			main = function() SharpVector() end;
+
+			after = SharpVector_SetPreallocationAmount
+
+		}
 
 	};
 
+
 	SetUnpacked = {
 
-		{ name = 'Vector:SetUnpacked'; setup = function()
+		{
 
-			local vec = Vector()
+			name = 'Vector:SetUnpacked';
+			standard = true;
 
-			return vec
+			setup = function() return Vector() end;
 
-		end; func = function( vec )
+			main = function( vec ) vec:SetUnpacked( 3.14, 1.618, 37 ) end
 
-			vec:SetUnpacked( 3.14, 1.618, 37 )
+		};
 
-		end; standard = true };
+		{
 
-		{ name = 'SharpVector:SetUnpacked'; setup = function()
+			name = 'SharpVector:SetUnpacked';
 
-			local sharpvec = SharpVector()
+			setup = function() return SharpVector() end;
 
-			return sharpvec
+			main = function( vec ) vec:SetUnpacked( 3.14, 1.618, 37 ) end
 
-		end; func = function( sharpvec )
-
-			sharpvec:SetUnpacked( 3.14, 1.618, 37 )
-
-		end }
+		}
 
 	};
 	Zero = {
 
-		{ name = 'Vector:Zero'; setup = function()
+		{
 
-			local vec = Vector()
+			name = 'Vector:Zero';
+			standard = true;
 
-			return vec
+			setup = function() return Vector( 1, 1, 1 ) end;
 
-		end; func = function( vec )
+			main = function( vec ) vec:Zero() end
 
-			vec:Zero()
+		};
 
-		end; standard = true };
+		{
 
-		{ name = 'SharpVector:Zero'; setup = function()
+			name = 'SharpVector:Zero';
 
-			local sharpvec = SharpVector()
+			setup = function() return SharpVector( 1, 1, 1 ) end;
 
-			return sharpvec
+			main = function( vec ) vec:Zero() end
 
-		end; func = function( sharpvec )
-
-			sharpvec:Zero()
-
-		end }
+		}
 
 	};
 	Negate = {
 
-		{ name = 'Vector:Negate'; setup = function()
+		{
 
-			local vec = Vector( 1, 1, 1 )
+			name = 'Vector:Negate';
+			standard = true;
 
-			return vec
+			setup = function() return Vector( 1, 1, 1 ) end;
 
-		end; func = function( vec )
+			main = function( vec ) vec:Negate() end
 
-			vec:Negate()
+		};
 
-		end; standard = true };
+		{
 
-		{ name = 'SharpVector:Negate'; setup = function()
+			name = 'SharpVector:Negate';
 
-			local sharpvec = SharpVector( 1, 1, 1 )
+			setup = function() return SharpVector( 1, 1, 1 ) end;
 
-			return sharpvec
+			main = function( vec ) vec:Negate() end
 
-		end; func = function( sharpvec )
-
-			sharpvec:Negate()
-
-		end }
+		}
 
 	};
 	GetNegated = {
 
-		{ name = 'Vector:GetNegated'; setup = function()
+		{
 
-			local vec = Vector( 1, 1, 1 )
+			name = 'Vector:GetNegated';
+			standard = true;
 
-			return vec
+			setup = function() return Vector( 1, 1, 1 ) end;
 
-		end; func = function( vec )
+			main = function( vec ) vec:GetNegated() end
 
-			vec:GetNegated()
+		};
 
-		end; standard = true };
+		{
 
-		{ name = 'SharpVector:GetNegated'; setup = function()
+			name = 'SharpVector:GetNegated';
 
-			local sharpvec = SharpVector( 1, 1, 1 )
+			setup = function() raise_preallocation_1() return SharpVector( 1, 1, 1 ) end;
 
-			RaisePreallocation( 'sharpvec' )
+			main = function( vec ) vec:GetNegated() end;
 
-			return sharpvec
+			after = SharpVector_SetPreallocationAmount
 
-		end; func = function( sharpvec )
-
-			sharpvec:GetNegated()
-
-		end }
+		}
 
 	};
 	Unpack = {
 
-		{ name = 'Vector:Unpack'; setup = function()
+		{
 
-			local vec = Vector( 3.14, 1.618, 37 )
+			name = 'Vector:Unpack';
+			standard = true;
 
-			return vec
+			setup = function() return Vector( 1, 1, 1 ) end;
 
-		end; func = function( vec )
+			main = function( vec ) vec:Unpack() end
 
-			vec:Unpack()
+		};
 
-		end; standard = true };
+		{
 
-		{ name = 'SharpVector:Unpack'; setup = function()
+			name = 'SharpVector:Unpack';
 
-			local sharpvec = SharpVector( 3.14, 1.618, 37 )
+			setup = function() return SharpVector( 1, 1, 1 ) end;
 
-			return sharpvec
+			main = function( vec ) vec:Unpack() end
 
-		end; func = function( sharpvec )
-
-			sharpvec:Unpack()
-
-		end }
+		}
 
 	};
 
 	Set = {
 
-		{ name = 'Vector:Set'; setup = function()
+		{
 
-			local vec = Vector( 3.14, 1.618, 37 )
-			local vec2 = Vector()
+			name = 'Vector:Set';
+			standard = true;
 
-			return vec, vec2
+			setup = function() return Vector(), Vector() end;
 
-		end; func = function( vec, vec2 )
+			main = function( vec1, vec2 ) vec1:Set( vec2 ) end
 
-			vec2:Set( vec )
+		};
 
-		end; standard = true };
+		{
 
-		{ name = 'SharpVector:Set'; setup = function()
+			name = 'SharpVector:Set';
 
-			local sharpvec = SharpVector( 3.14, 1.618, 37 )
-			local sharpvec2 = SharpVector()
+			setup = function() return SharpVector(), SharpVector() end;
 
-			return sharpvec, sharpvec2
+			main = function( vec1, vec2 ) vec1:Set( vec2 ) end
 
-		end; func = function( sharpvec, sharpvec2 )
-
-			sharpvec2:Set( sharpvec )
-
-		end }
+		}
 
 	};
 	Add = {
 
-		{ name = 'Vector:Add'; setup = function()
+		{
 
-			local vec = Vector( 1, 1, 1 )
-			local vec2 = Vector()
+			name = 'Vector:Add';
+			standard = true;
 
-			return vec, vec2
+			setup = function() return Vector(), Vector() end;
 
-		end; func = function( vec, vec2 )
+			main = function( vec1, vec2 ) vec1:Add( vec2 ) end
 
-			vec2:Add( vec )
+		};
 
-		end; standard = true };
+		{
 
-		{ name = 'SharpVector:Add'; setup = function()
+			name = 'SharpVector:Add';
 
-			local sharpvec = SharpVector( 1, 1, 1 )
-			local sharpvec2 = SharpVector()
+			setup = function() return SharpVector(), SharpVector() end;
 
-			return sharpvec, sharpvec2
+			main = function( vec1, vec2 ) vec1:Add( vec2 ) end
 
-		end; func = function( sharpvec, sharpvec2 )
-
-			sharpvec2:Add( sharpvec )
-
-		end }
+		}
 
 	};
 	Mul = {
 
-		{ name = 'Vector:Mul( multiplier )'; setup = function()
+		{
 
-			local vec = Vector( 1, 1, 1 )
+			name = 'Vector:Mul( number )';
+			standard = true;
 
-			return vec, 2.718
+			setup = function() return Vector() end;
 
-		end; func = function( vec, multiplier )
+			main = function( vec ) vec:Mul( 1 ) end
 
-			vec:Mul( multiplier )
+		};
 
-		end; standard = true };
+		{
 
-		{ name = 'SharpVector:Mul( multiplier )'; setup = function()
+			name = 'SharpVector:Mul( number )';
 
-			local sharpvec = SharpVector( 1, 1, 1 )
+			setup = function() return SharpVector() end;
 
-			return sharpvec, 2.718
+			main = function( vec ) vec:Mul( 1 ) end
 
-		end; func = function( sharpvec, multiplier )
+		};
 
-			sharpvec:Mul( multiplier )
+		{
 
-		end };
+			name = 'Vector:Mul( vector )';
+			standard = true;
 
-		{ name = 'Vector:Mul( vector )'; setup = function()
+			setup = function() return Vector(), Vector() end;
 
-			local vec = Vector( 1, 1, 1 )
-			local vec2 = Vector( 2.718, 2.718, 2.718 )
+			main = function( vec1, vec2 ) vec1:Mul( vec2 ) end
 
-			return vec, vec2
+		};
 
-		end; func = function( vec, vec2 )
+		{
 
-			vec:Mul( vec2 )
+			name = 'SharpVector:Mul( vector )';
 
-		end; standard = true };
+			setup = function() return SharpVector(), SharpVector() end;
 
-		{ name = 'SharpVector:Mul( sharpvector )'; setup = function()
+			main = function( vec1, vec2 ) vec1:Mul( vec2 ) end
 
-			local sharpvec = SharpVector( 1, 1, 1 )
-			local sharpvec2 = SharpVector( 2.718, 2.718, 2.718 )
+		}
 
-			return sharpvec, sharpvec2
+	};
+	['Mul( matrix )'] = {
 
-		end; func = function( sharpvec, sharpvec2 )
+		{
 
-			sharpvec:Mul( sharpvec2 )
+			name = 'Vector:Mul( matrix )';
+			standard = true;
 
-		end }
+			setup = function() return Vector(), Matrix() end;
+
+			main = function( vec, matrix ) vec:Mul( matrix ) end
+
+		};
+
+		{
+
+			name = 'SharpVector:Mul( matrix )';
+
+			setup = function() return SharpVector(), Matrix() end;
+
+			main = function( vec, matrix ) vec:Mul( matrix ) end
+
+		}
 
 	};
 
 	Length = {
 
-		{ name = 'Vector:Length'; setup = function()
+		{
 
-			local vec = Vector( 3, 4, 5 )
+			name = 'Vector:Length';
+			standard = true;
 
-			return vec
+			setup = function() return Vector( 3, 4, 5 ) end;
 
-		end; func = function( vec )
+			main = function( vec ) vec:Length() end
 
-			vec:Length()
+		};
 
-		end; standard = true };
+		{
 
-		{ name = 'SharpVector:Length'; setup = function()
+			name = 'SharpVector:Length';
 
-			local sharpvec = SharpVector( 3, 4, 5 )
+			setup = function() return SharpVector( 3, 4, 5 ) end;
 
-			return sharpvec
+			main = function( vec ) vec:Length() end
 
-		end; func = function( sharpvec )
-
-			sharpvec:Length()
-
-		end }
+		}
 
 	};
 	Distance = {
 
-		{ name = 'Vector:Distance'; setup = function()
+		{
 
-			local vec = Vector()
-			local vec2 = Vector()
+			name = 'Vector:Distance';
+			standard = true;
 
-			vec:Random( -16384, 16384 )
-			vec2:Random( -16384, 16384 )
+			setup = function()
 
-			return vec, vec2
+				local vec1 = Vector();
+				local vec2 = Vector()
 
-		end; func = function( vec, vec2 )
+				vec1:Random( -16384, 16384 )
+				vec2:Random( -16384, 16384 )
 
-			vec:Distance( vec2 )
+				return vec1, vec2
 
-		end; standard = true };
+			end;
 
-		{ name = 'SharpVector:Distance'; setup = function()
+			main = function( vec1, vec2 ) vec1:Distance( vec2 ) end
 
-			local sharpvec = SharpVector()
-			local sharpvec2 = SharpVector()
+		};
 
-			sharpvec:Random( -16384, 16384 )
-			sharpvec2:Random( -16384, 16384 )
+		{
 
-			return sharpvec, sharpvec2
+			name = 'SharpVector:Distance';
 
-		end; func = function( sharpvec, sharpvec2 )
+			setup = function()
 
-			sharpvec:Distance( sharpvec2 )
+				local vec1 = SharpVector();
+				local vec2 = SharpVector()
 
-		end }
+				vec1:Random( -16384, 16384 )
+				vec2:Random( -16384, 16384 )
+
+				return vec1, vec2
+
+			end;
+
+			main = function( vec1, vec2 ) vec1:Distance( vec2 ) end
+
+		}
 
 	};
 
 	Normalize = {
 
-		{ name = 'Vector:Normalize'; setup = function()
+		{
 
-			local vec = Vector( 3, 4, 5 )
+			name = 'Vector:Normalize';
+			standard = true;
 
-			return vec
+			setup = function() return Vector( 1, 1, 1 ) end;
 
-		end; func = function( vec )
+			main = function( vec ) vec:Normalize() end
 
-			vec:Normalize()
+		};
 
-		end; standard = true };
+		{
 
-		{ name = 'SharpVector:Normalize'; setup = function()
+			name = 'SharpVector:Normalize';
 
-			local sharpvec = SharpVector( 3, 4, 5 )
+			setup = function() return SharpVector( 1, 1, 1 ) end;
 
-			return sharpvec
+			main = function( vec ) vec:Normalize() end
 
-		end; func = function( sharpvec )
-
-			sharpvec:Normalize()
-
-		end }
+		}
 
 	};
 	GetNormalized = {
 
-		{ name = 'Vector:GetNormalized'; setup = function()
+		{
 
-			local vec = Vector( 3, 4, 5 )
+			name = 'Vector:GetNormalized';
+			standard = true;
 
-			return vec
+			setup = function() return Vector( 1, 1, 1 ) end;
 
-		end; func = function( vec )
+			main = function( vec ) vec:GetNormalized() end
 
-			vec:GetNormalized()
+		};
 
-		end; standard = true };
+		{
 
-		{ name = 'SharpVector:GetNormalized'; setup = function()
+			name = 'SharpVector:GetNormalized';
 
-			local sharpvec = SharpVector( 3, 4, 5 )
+			setup = function() raise_preallocation_1() return SharpVector( 1, 1, 1 ) end;
 
-			RaisePreallocation( 'sharpvec' )
+			main = function( vec ) vec:GetNormalized() end;
 
-			return sharpvec
+			after = SharpVector_SetPreallocationAmount
 
-		end; func = function( sharpvec )
-
-			sharpvec:GetNormalized()
-
-		end }
+		}
 
 	};
 
 	Dot = {
 
-		{ name = 'Vector:Dot'; setup = function()
+		{
 
-			local vec = Vector( 0, 1, 0 )
-			local vec2 = Vector( 0, -1, 0 )
+			name = 'Vector:Dot';
+			standard = true;
 
-			return vec, vec2
+			setup = function()
 
-		end; func = function( vec, vec2 )
+				local vec1 = Vector( 0, 1, 0 )
+				local vec2 = Vector( 0, -1, 0 )
 
-			vec:Dot( vec2 )
+				return vec1, vec2
 
-		end; standard = true };
+			end;
 
-		{ name = 'SharpVector:Dot'; setup = function()
+			main = function( vec1, vec2 ) vec1:Dot( vec2 ) end
 
-			local sharpvec = SharpVector( 0, 1, 0 )
-			local sharpvec2 = SharpVector( 0, -1, 0 )
+		};
 
-			return sharpvec, sharpvec2
+		{
 
-		end; func = function( sharpvec, sharpvec2 )
+			name = 'SharpVector:Dot';
 
-			sharpvec:Dot( sharpvec2 )
+			setup = function()
 
-		end }
+				local vec1 = SharpVector( 0, 1, 0 )
+				local vec2 = SharpVector( 0, -1, 0 )
+
+				return vec1, vec2
+
+			end;
+
+			main = function( vec1, vec2 ) vec1:Dot( vec2 ) end
+
+		}
 
 	};
 	Cross = {
 
-		{ name = 'Vector:Cross'; setup = function()
+		{
 
-			local vecUp = Vector( 0, 0, 1 )
-			local vecForward = Vector( 100, 0, 0 )
+			name = 'Vector:Cross';
+			standard = true;
 
-			return vecUp, vecForward
+			setup = function()
 
-		end; func = function( vecUp, vecForward )
+				local vecUp = Vector( 0, 0, 1 )
+				local vecForward = Vector( 100, 0, 0 )
 
-			vecUp:Cross( vecForward )
+				return vecUp, vecForward
 
-		end; standard = true };
+			end;
 
-		{ name = 'SharpVector:Cross'; setup = function()
+			main = function( vecUp, vecForward ) vecUp:Cross( vecForward ) end
 
-			local sharpvecUp = SharpVector( 0, 0, 1 )
-			local sharpvecForward = SharpVector( 100, 0, 0 )
+		};
 
-			RaisePreallocation( 'sharpvec' )
+		{
 
-			return sharpvecUp, sharpvecForward
+			name = 'SharpVector:Cross';
 
-		end; func = function( sharpvecUp, sharpvecForward )
+			setup = function()
 
-			sharpvecUp:Cross( sharpvecForward )
+				local vecUp = SharpVector( 0, 0, 1 )
+				local vecForward = SharpVector( 100, 0, 0 )
 
-		end };
+				raise_preallocation_1()
 
-		{ name = 'SharpVector:Cross; output specified'; setup = function()
+				return vecUp, vecForward
 
-			local sharpvecUp = SharpVector( 0, 0, 1 )
-			local sharpvecForward = SharpVector( 100, 0, 0 )
+			end;
 
-			local out = SharpVector()
+			main = function( vecUp, vecForward ) vecUp:Cross( vecForward ) end;
 
-			return sharpvecUp, sharpvecForward, out
+			after = SharpVector_SetPreallocationAmount
 
-		end; func = function( sharpvecUp, sharpvecForward, out )
+		};
 
-			sharpvecUp:Cross( sharpvecForward, out )
+		{
 
-		end }
+			name = 'SharpVector:Cross; output specified';
+
+			setup = function()
+
+				local vecUp = SharpVector( 0, 0, 1 )
+				local vecForward = SharpVector( 100, 0, 0 )
+
+				return vecUp, vecForward, SharpVector()
+
+			end;
+
+			main = function( vecUp, vecForward, output ) vecUp:Cross( vecForward, output ) end
+
+		}
 
 	};
 
 	IsEqualTol = {
 
-		{ name = 'Vector:IsEqualTol'; setup = function()
+		{
 
-			local tolerance = 0.5
+			name = 'Vector:IsEqualTol';
+			standard = true;
 
-			local vec = Vector( 0, 0, 0 )
-			local vec2 = Vector( 0, 0, tolerance * 2 )
+			setup = function()
 
-			return vec, vec2, tolerance
+				local tolerance = 0.5
 
-		end; func = function( vec, vec2, tolerance )
+				local vec1 = Vector( 0, 0, 0 )
+				local vec2 = Vector( 0, 0, tolerance * 2 )
 
-			vec:IsEqualTol( vec2, tolerance )
+				return vec1, vec2, tolerance
 
-		end; standard = true };
+			end;
 
-		{ name = 'SharpVector:IsEqualTol'; setup = function()
+			main = function( vec1, vec2, tolerance ) vec1:IsEqualTol( vec2, tolerance ) end
 
-			local tolerance = 0.5
+		};
 
-			local sharpvec = SharpVector( 0, 0, 0 )
-			local sharpvec2 = SharpVector( 0, 0, tolerance * 2 )
+		{
 
-			return sharpvec, sharpvec2, tolerance
+			name = 'SharpVector:IsEqualTol';
 
-		end; func = function( sharpvec, sharpvec2, tolerance )
+			setup = function()
 
-			sharpvec:IsEqualTol( sharpvec2, tolerance )
+				local tolerance = 0.5
 
-		end }
+				local vec1 = SharpVector( 0, 0, 0 )
+				local vec2 = SharpVector( 0, 0, tolerance * 2 )
+
+				return vec1, vec2, tolerance
+
+			end;
+
+			main = function( vec1, vec2, tolerance ) vec1:IsEqualTol( vec2, tolerance ) end
+
+		}
 
 	};
 	IsZero = {
 
-		{ name = 'Vector:IsZero'; setup = function()
+		{
 
-			local vec = Vector( 0, 0, 0 )
+			name = 'Vector:IsZero';
+			standard = true;
 
-			return vec
+			setup = function() return Vector() end;
 
-		end; func = function( vec )
+			main = function( vec ) vec:IsZero() end
 
-			vec:IsZero()
+		};
 
-		end; standard = true };
+		{
 
-		{ name = 'SharpVector:IsZero'; setup = function()
+			name = 'SharpVector:IsZero';
 
-			local sharpvec = SharpVector( 0, 0, 0 )
+			setup = function() return SharpVector() end;
 
-			return sharpvec
+			main = function( vec ) vec:IsZero() end
 
-		end; func = function( sharpvec )
-
-			sharpvec:IsZero()
-
-		end }
+		}
 
 	};
 
 	ToTable = {
 
-		{ name = 'Vector:ToTable'; setup = function()
+		{
 
-			local vec = Vector( 6.28, 0.382, 37 ^ 0.5 )
+			name = 'Vector:ToTable';
+			standard = true;
 
-			return vec
+			setup = function() return Vector() end;
 
-		end; func = function( vec )
+			main = function( vec ) vec:ToTable() end
 
-			vec:ToTable()
+		};
 
-		end; standard = true };
+		{
 
-		{ name = 'SharpVector:ToTable'; setup = function()
+			name = 'SharpVector:ToTable';
 
-			local sharpvec = SharpVector( 6.28, 0.382, 37 ^ 0.5 )
+			setup = function() return SharpVector() end;
 
-			return sharpvec
+			main = function( vec ) vec:ToTable() end
 
-		end; func = function( sharpvec )
+		};
 
-			sharpvec:ToTable()
+		{
 
-		end };
+			name = 'SharpVector:ToTable; output specified';
 
-		{ name = 'SharpVector:ToTable; output specified'; setup = function()
+			setup = function() return SharpVector(), { 0; 0; 0 } end;
 
-			local sharpvec = SharpVector( 6.28, 0.382, 37 ^ 0.5 )
-			local out = { true; true; true }
+			main = function( vec, output ) vec:ToTable( output ) end
 
-			return sharpvec, out
-
-		end; func = function( sharpvec, out )
-
-			sharpvec:ToTable( out )
-
-		end }
+		}
 
 	};
 
 	Random = {
 
-		{ name = 'Vector:Random'; setup = function()
+		{
 
-			local vec = Vector()
+			name = 'Vector:Random';
+			standard = true;
 
-			return vec
+			setup = function() return Vector() end;
 
-		end; func = function( vec )
+			main = function( vec ) vec:Random( -1, 1 ) end
 
-			vec:Random( -16384, 16384 )
+		};
 
-		end; standard = true };
+		{
 
-		{ name = 'SharpVector:Random'; setup = function()
+			name = 'SharpVector:Random';
 
-			local sharpvec = SharpVector()
+			setup = function() return SharpVector() end;
 
-			return sharpvec
+			main = function( vec ) vec:Random( -1, 1 ) end
 
-		end; func = function( sharpvec )
-
-			sharpvec:Random( -16384, 16384 )
-
-		end }
+		}
 
 	};
 
 	WithinAABox = {
 
-		{ name = 'Vector:WithinAABox'; setup = function()
+		{
 
-			local vec = Vector()
+			name = 'Vector:WithinAABox';
+			standard = true;
 
-			local boxMins = Vector( -16384, -16384, -16384 )
-			local boxMaxs = boxMins:GetNegated()
+			setup = function()
 
-			return vec, boxMins, boxMaxs
+				local vec = Vector()
 
-		end; func = function( vec, boxMins, boxMaxs )
+				local mins = Vector( -1, -1, -1 )
+				local maxs = mins:GetNegated()
 
-			vec:WithinAABox( boxMins, boxMaxs )
+				return vec, mins, maxs
 
-		end; standard = true };
+			end;
 
-		{ name = 'SharpVector:WithinAABox'; setup = function()
+			main = function( vec, mins, maxs ) vec:WithinAABox( mins, maxs ) end;
 
-			local sharpvec = SharpVector()
+		};
 
-			local boxMins = SharpVector( -16384, -16384, -16384 )
-			local boxMaxs = boxMins:GetNegated()
+		{
 
-			return sharpvec, boxMins, boxMaxs
+			name = 'SharpVector:WithinAABox';
 
-		end; func = function( sharpvec, boxMins, boxMaxs )
+			setup = function()
 
-			sharpvec:WithinAABox( boxMins, boxMaxs )
+				local vec = SharpVector()
 
-		end }
+				local mins = SharpVector( -1, -1, -1 )
+				local maxs = mins:GetNegated()
+
+				return vec, mins, maxs
+
+			end;
+
+			main = function( vec, mins, maxs ) vec:WithinAABox( mins, maxs ) end;
+
+		}
 
 	};
 
 	Angle = {
 
-		{ name = 'Vector:Angle'; setup = function()
+		{
 
-			local vec = Vector( 3, 4, 5 )
+			name = 'Vector:Angle';
+			standard = true;
 
-			return vec
+			setup = function() return Vector( 3, 4, 5 ) end;
 
-		end; func = function( vec )
+			main = function( vec ) vec:Angle() end
 
-			vec:Angle()
+		};
 
-		end; standard = true };
+		{
 
-		{ name = 'SharpVector:Angle'; setup = function()
+			name = 'SharpVector:Angle';
 
-			local sharpvec = SharpVector( 3, 4, 5 )
+			setup = function() raise_preallocation_3() return SharpVector( 3, 4, 5 ) end;
 
-			RaisePreallocation( 'angle' )
+			main = function( vec ) vec:Angle() end
 
-			return sharpvec
+		};
 
-		end; func = function( sharpvec )
+		{
 
-			sharpvec:Angle()
+			name = 'SharpVector:Angle; output specified';
 
-		end };
+			setup = function() raise_preallocation_3() return SharpVector( 3, 4, 5 ), Angle() end;
 
-		{ name = 'SharpVector:Angle; output specified'; setup = function()
+			main = function( vec, output ) vec:Angle( output ) end;
 
-			local sharpvec = SharpVector( 3, 4, 5 )
+			after = SharpVector_SetPreallocationAmount
 
-			local out = Angle()
-
-			return sharpvec, out
-
-		end; func = function( sharpvec, out )
-
-			sharpvec:Angle( out )
-
-		end }
+		}
 
 	};
 	AngleEx = {
 
-		{ name = 'Vector:AngleEx'; setup = function()
+		{
 
-			local vec = Vector( 3, 4, 5 )
-			local vecUp = Vector( 1, 0, 0 )
+			name = 'Vector:AngleEx';
+			standard = true;
 
-			return vec, vecUp
+			setup = function() return Vector( 3, 4, 5 ), Vector( 1, 0, 0 ) end;
 
-		end; func = function( vec, vecUp )
+			main = function( vec, vecUp ) vec:AngleEx( vecUp ) end
 
-			vec:AngleEx( vecUp )
+		};
 
-		end; standard = true };
+		{
 
-		{ name = 'SharpVector:AngleEx'; setup = function()
+			name = 'SharpVector:AngleEx';
 
-			local sharpvec = SharpVector( 3, 4, 5 )
-			local sharpvecUp = SharpVector( 1, 0, 0 )
+			setup = function() raise_preallocation_3() return SharpVector( 3, 4, 5 ), SharpVector( 1, 0, 0 ) end;
 
-			RaisePreallocation( 'angle' )
+			main = function( vec, vecUp ) vec:AngleEx( vecUp ) end
 
-			return sharpvec, sharpvecUp
+		};
 
-		end; func = function( sharpvec, sharpvecUp )
+		{
 
-			sharpvec:AngleEx( sharpvecUp )
+			name = 'SharpVector:AngleEx; output specified';
 
-		end };
+			setup = function() raise_preallocation_3() return SharpVector( 3, 4, 5 ), SharpVector( 1, 0, 0 ), Angle() end;
 
-		{ name = 'SharpVector:AngleEx; output specified'; setup = function()
+			main = function( vec, vecUp, output ) vec:AngleEx( vecUp, output ) end;
 
-			local sharpvec = SharpVector( 3, 4, 5 )
-			local sharpvecUp = SharpVector( 1, 0, 0 )
+			after = SharpVector_SetPreallocationAmount
 
-			local out = Angle()
-
-			return sharpvec, sharpvecUp, out
-
-		end; func = function( sharpvec, sharpvecUp, out )
-
-			sharpvec:AngleEx( sharpvecUp, out )
-
-		end }
+		}
 
 	};
 
 	Rotate = {
 
-		{ name = 'Vector:Rotate'; setup = function()
+		{
 
-			local vec = Vector( 3, 4, 5 )
+			name = 'Vector:Rotate';
+			standard = true;
 
-			return vec, Angle( 45, 15, 30 )
+			setup = function() return Vector( 3, 4, 5 ), Angle( 45, 15, 30 ) end;
 
-		end; func = function( vec, ang )
+			main = function( vec, ang ) vec:Rotate( ang ) end
 
-			vec:Rotate( ang )
+		};
 
-		end; standard = true };
+		{
 
-		{ name = 'SharpVector:Rotate'; setup = function()
+			name = 'SharpVector:Rotate';
 
-			local sharpvec = SharpVector( 3, 4, 5 )
+			setup = function() return SharpVector( 3, 4, 5 ), Angle( 45, 15, 30 ) end;
 
-			return sharpvec, Angle( 45, 15, 30 )
+			main = function( vec, ang ) vec:Rotate( ang ) end
 
-		end; func = function( sharpvec, ang )
-
-			sharpvec:Rotate( ang )
-
-		end }
+		}
 
 	};
 
 	Lerp = {
 
-		{ name = 'LerpVector'; setup = function()
+		{
 
-			local vecStart = Vector( 0, 0, 0 )
+			name = 'LerpVector';
+			standard = true;
 
-			local vecTarget = Vector()
-			vecTarget:Random( -16384, 16384 )
+			setup = function() return Vector(), Vector( 1, 1, 1 ) end;
 
-			return vecStart, vecTarget
+			main = function( vec1, vec2 ) LerpVector( 0.00001, vec1, vec2 ) end
 
-		end; func = function( vecStart, vecTarget )
+		};
 
-			LerpVector( 0.5, vecStart, vecTarget )
+		{
 
-		end; standard = true };
+			name = 'SharpVector:Lerp';
 
-		{ name = 'SharpVector:Lerp'; setup = function()
+			setup = function() raise_preallocation_1() return SharpVector(), SharpVector( 1, 1, 1 ) end;
 
-			local sharpvecStart = SharpVector( 0, 0, 0 )
+			main = function( vec1, vec2 ) vec1:Lerp( vec2, 0.00001 ) end;
 
-			local sharpvecTarget = SharpVector()
-			sharpvecTarget:Random( -16384, 16384 )
+			after = SharpVector_SetPreallocationAmount
 
-			RaisePreallocation( 'sharpvec' )
+		};
 
-			return sharpvecStart, sharpvecTarget
+		{
 
-		end; func = function( sharpvecStart, sharpvecTarget )
+			name = 'SharpVector:Lerp; output specified';
 
-			sharpvecStart:Lerp( sharpvecTarget, 0.5 )
+			setup = function() return SharpVector(), SharpVector( 1, 1, 1 ) end;
 
-		end };
+			main = function( vec1, vec2 ) vec1:Lerp( vec2, 0.00001, vec1 ) end
 
-		{ name = 'SharpVector:Lerp; output specified'; setup = function()
-
-			local sharpvecCurrent = SharpVector( 0, 0, 0 )
-
-			local sharpvecTarget = SharpVector()
-			sharpvecTarget:Random( -16384, 16384 )
-
-			return sharpvecCurrent, sharpvecTarget
-
-		end; func = function( sharpvecCurrent, sharpvecTarget )
-
-			sharpvecCurrent:Lerp( sharpvecTarget, 0.5, sharpvecCurrent )
-
-		end }
+		}
 
 	}
 
 }
+
 
 local SelectedTests = {
 
@@ -827,6 +842,7 @@ local SelectedTests = {
 	-- 'Set';
 	-- 'Add';
 	-- 'Mul';
+	-- 'Mul( matrix )'; -- not for the Menu realm
 
 	-- 'Length';
 	-- 'Distance';
@@ -851,59 +867,42 @@ local SelectedTests = {
 
 	-- 'Rotate';
 
-	-- 'Lerp';
+	-- 'Lerp'
 
 }
 
-
---[[–––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
-	Benchmark
-–––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––]]
-local SHARED_JIT_OFF = false
+local Shared_JIT_Off = false
 
 for _, name in ipairs( SelectedTests ) do
 
-	for _, funcbench in ipairs( Tests[name] ) do
-		Tests[name].jit_off = SHARED_JIT_OFF
+	for _, budgetedfunc in ipairs( Tests[name] ) do
+		budgetedfunc.jit_off = Shared_JIT_Off
 	end
 
 end
 
-local frames = 1000
-local iterations_per_frame = 250
 
+--[[–––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+	Act
+–––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––]]
 gluafuncbudget.Configure( {
 
 	frames = frames;
 	iterations_per_frame = iterations_per_frame;
 
-	digit = 4;
+	digit = 7;
 
 	measure_unit = 'ms';
-	comparison_basis = 'average'
+	comparison_basis = 'average';
+
+	shown_categories = 'median average avgfps'
 
 } )
 
-RaisePreallocation = function( of )
-
-	timer.Pause( 'SharpVector_Preallocation' )
-
-	local prealloc_amount = frames * iterations_per_frame + frames + 1
-	SharpVector_SetMaxPreallocAmount( of:find('sharpvec') ~= nil and prealloc_amount or nil, nil, of:find('angle') ~= nil and prealloc_amount or nil )
-
-	timer.Create( 'SharpVector_SetMaxPreallocAmount()', 0, 1, function()
-
-		SharpVector_SetMaxPreallocAmount()
-		timer.UnPause( 'SharpVector_Preallocation' )
-
-	end )
-
-end
-
 for _, name in ipairs( SelectedTests ) do
 
-	for _, funcbench in ipairs( Tests[name] ) do
-		gluafuncbudget.Queue( funcbench )
+	for _, budgetedfunc in ipairs( Tests[name] ) do
+		gluafuncbudget.Queue( budgetedfunc )
 	end
 
 end
